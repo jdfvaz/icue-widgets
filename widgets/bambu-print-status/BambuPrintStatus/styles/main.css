@@ -1,0 +1,628 @@
+/* Bambu Print Status
+ * The part on the left is built up layer by layer. Themes, backgrounds,
+ * progress styles and fonts are switched with data-* attributes on <html>
+ * (set from the iCUE settings in scripts/main.js). */
+
+:root {
+  --text: #ede7dd;
+  --accent: #c9a15a;
+  --progress: #c9a15a;
+  --bg: #20252b;
+  --bg2: #2b323b;
+  --ok: #8cc48b;
+  --warn: #f0a43c;
+  --bad: #ef6b57;
+  --glow: 0.4;
+  --glow-accent: transparent;
+  --bg-opacity: 1;
+
+  --muted: color-mix(in srgb, var(--text) 60%, var(--bg));
+  --faint: color-mix(in srgb, var(--text) 14%, var(--bg));
+  --ghost: color-mix(in srgb, var(--text) 8%, transparent);
+
+  --font-display: "Bahnschrift", "DIN Alternate", "Barlow Semi Condensed", "Segoe UI", system-ui, sans-serif;
+  --font-body: var(--font-display);
+  --dw: 600;        /* weight of big display text */
+  --dw-mid: 500;    /* weight of the job name */
+  --bw: 600;        /* weight of values in the details row */
+  --stretch: 80%;
+
+  /* Sizing unit: tracks slot height in landscape, width in portrait. */
+  --u: min(1vh, 0.42vw);
+  --pad: calc(var(--u) * 7);
+  --part-w: calc(var(--u) * 22);
+  --tag-w: calc(var(--u) * 20);
+  --layer: calc(var(--u) * 2.2);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* near-square landscape slots (e.g. 840 x 696): width is the limit */
+@media (orientation: landscape) and (max-aspect-ratio: 8/5) {
+  :root { --u: min(0.62vh, 0.52vw); }
+}
+
+@media (orientation: portrait) {
+  :root {
+    --u: min(0.5vh, 1.05vw);
+    --part-w: calc(var(--u) * 30);
+  }
+}
+
+/* ---------------------------------------------------------------- fonts -- */
+
+html[data-font="clean"] {
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --dw: 700; --dw-mid: 600; --stretch: 100%;
+}
+html[data-font="chunky"] {
+  --font-display: Impact, Haettenschweiler, "Arial Black", sans-serif;
+  --font-body: "Segoe UI", system-ui, sans-serif;
+  --dw: 400; --dw-mid: 400; --stretch: 100%;
+}
+html[data-font="handwritten"] {
+  --font-display: "Ink Free", "Segoe Print", "Comic Sans MS", cursive;
+  --font-body: "Ink Free", "Segoe Print", "Comic Sans MS", cursive;
+  --dw: 400; --dw-mid: 400; --bw: 400; --stretch: 100%;
+}
+html[data-font="code"] {
+  --font-display: "Cascadia Mono", "Cascadia Code", Consolas, "DejaVu Sans Mono", monospace;
+  --font-body: var(--font-display);
+  --dw: 600; --dw-mid: 500; --stretch: 100%;
+}
+
+/* ----------------------------------------------------------------- base -- */
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  color: var(--text);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+[hidden] { display: none !important; }
+
+/* ----------------------------------------------------------- backdrops -- */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: var(--bg-opacity);
+  background: var(--bg);
+}
+
+html[data-backdrop="gradient"] .backdrop {
+  background: linear-gradient(125deg, var(--bg) 15%, var(--bg2) 100%);
+}
+
+/* two soft color clouds drifting slowly */
+html[data-backdrop="glow"] .backdrop {
+  background: linear-gradient(160deg, var(--bg) 30%, color-mix(in srgb, var(--bg2) 75%, var(--bg)));
+}
+html[data-backdrop="glow"] .backdrop::before,
+html[data-backdrop="glow"] .backdrop::after {
+  content: "";
+  position: absolute;
+  width: 90vmax;
+  height: 90vmax;
+  border-radius: 50%;
+}
+html[data-backdrop="glow"] .backdrop::before {
+  left: -30vmax;
+  top: -50vmax;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 34%, transparent), transparent);
+  animation: drift-a 24s ease-in-out infinite alternate;
+}
+html[data-backdrop="glow"] .backdrop::after {
+  right: -35vmax;
+  bottom: -55vmax;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--progress) 30%, transparent), transparent);
+  animation: drift-b 29s ease-in-out infinite alternate;
+}
+@keyframes drift-a { to { transform: translate(38vw, 22vh) scale(1.15); } }
+@keyframes drift-b { to { transform: translate(-42vw, -18vh) scale(0.9); } }
+
+/* retro sunset with a scrolling floor grid */
+html[data-backdrop="grid"] .backdrop {
+  background: linear-gradient(to bottom, var(--bg) 0%, var(--bg2) 64%, var(--bg) 64%);
+}
+html[data-backdrop="grid"] .backdrop::before {
+  content: "";
+  position: absolute;
+  left: 64%;
+  top: 64%;
+  width: 46vh;
+  height: 46vh;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: linear-gradient(to bottom, var(--accent), var(--progress));
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 45% 49%, #000 49% 57%, transparent 57% 60%, #000 60% 66%, transparent 66% 68%, #000 68%);
+  mask-image: linear-gradient(to bottom, #000 45%, transparent 45% 49%, #000 49% 57%, transparent 57% 60%, #000 60% 66%, transparent 66% 68%, #000 68%);
+  opacity: 0.34;
+}
+html[data-backdrop="grid"] .backdrop::after {
+  content: "";
+  position: absolute;
+  left: -50%;
+  right: -50%;
+  top: 64%;
+  height: 90%;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(to bottom, color-mix(in srgb, var(--accent) 42%, transparent) 2px, transparent 2px),
+    linear-gradient(to right, color-mix(in srgb, var(--accent) 42%, transparent) 2px, transparent 2px);
+  background-size: calc(var(--u) * 10) calc(var(--u) * 10);
+  transform-origin: top center;
+  transform: perspective(calc(var(--u) * 40)) rotateX(62deg);
+  -webkit-mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.25), #000 35%);
+  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.25), #000 35%);
+  animation: grid-scroll 2.4s linear infinite;
+}
+@keyframes grid-scroll { to { background-position: 0 calc(var(--u) * 10), 0 calc(var(--u) * 10); } }
+
+/* ----------------------------------------------------------------- app -- */
+
+#app {
+  --p: 0;
+  --fill: var(--progress);
+  --glow-fill: transparent;
+  --status: var(--muted);
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: grid;
+  grid-template-columns: var(--part-w) 1fr;
+  column-gap: calc(var(--tag-w) + var(--u) * 3);
+  padding: var(--pad);
+}
+
+/* ---------------------------------------------------------------- part -- */
+
+.part {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: 0;
+}
+
+.part-body {
+  position: relative;
+  margin: 0 calc(var(--u) * 1.5);
+  /* unprinted layers: faint slicer-preview lines */
+  background: repeating-linear-gradient(
+    to top,
+    var(--ghost) 0 calc(var(--layer) - 1px),
+    transparent calc(var(--layer) - 1px) var(--layer)
+  );
+  border-radius: calc(var(--u) * 0.6) calc(var(--u) * 0.6) 0 0;
+}
+
+/* the wrapper carries the glow, so it is not cut off by the fill's clip */
+.part-fill-wrap {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  filter: drop-shadow(0 0 calc(var(--u) * 6 * var(--glow)) var(--glow-fill));
+}
+
+.part-fill {
+  --paint: var(--fill);
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  clip-path: inset(calc((1 - var(--p)) * 100%) 0 0 0);
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 0.18), transparent 28%, transparent 72%, rgb(0 0 0 / 0.22)),
+    repeating-linear-gradient(to top, transparent 0 calc(var(--layer) - 1px), rgb(0 0 0 / 0.28) calc(var(--layer) - 1px) var(--layer)),
+    var(--paint);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 22%, transparent);
+  transition: clip-path 900ms var(--ease);
+}
+
+html[data-progress="gradient"] .part-fill {
+  --paint: linear-gradient(to top, var(--accent), var(--progress));
+}
+
+/* rainbow layers that keep rising */
+html[data-progress="rainbow"] .part-fill {
+  --paint: repeating-linear-gradient(
+    to top,
+    #ff4040 0, #ff9a1f calc(var(--u) * 8), #ffe14d calc(var(--u) * 16), #3ddc84 calc(var(--u) * 24),
+    #2ec4ff calc(var(--u) * 32), #8b5cf6 calc(var(--u) * 40), #ff45d0 calc(var(--u) * 48), #ff4040 calc(var(--u) * 56)
+  );
+  animation: rainbow-rise 5s linear infinite;
+}
+@keyframes rainbow-rise {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to { background-position: 0 0, 0 0, 0 calc(var(--u) * -56); }
+}
+
+/* fresh layer under the nozzle */
+.part-nozzle {
+  position: absolute;
+  left: calc(var(--u) * -1.5);
+  right: calc(var(--u) * -1.5);
+  bottom: calc(var(--p) * 100%);
+  height: max(2px, calc(var(--u) * 0.6));
+  transform: translateY(50%);
+  background: var(--text);
+  border-radius: 999px;
+  box-shadow: 0 0 calc(var(--u) * 3 * var(--glow)) var(--glow-fill);
+  opacity: 0;
+  transition: bottom 900ms var(--ease);
+}
+
+.is-running .part-nozzle {
+  opacity: 0.9;
+  animation: extrude 2.4s ease-in-out infinite;
+}
+
+.is-prepare .part-nozzle,
+.is-pause .part-nozzle { opacity: 0.45; }
+
+@keyframes extrude {
+  0%, 100% { opacity: 0.95; }
+  50% { opacity: 0.35; }
+}
+
+/* the percentage rides at the height of the newest layer */
+.pct {
+  position: absolute;
+  left: calc(100% + var(--u) * 4);
+  bottom: calc(var(--p) * 100%);
+  transform: translateY(calc(var(--p) * 100%));
+  width: var(--tag-w);
+  display: flex;
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 9);
+  font-weight: var(--dw);
+  font-stretch: var(--stretch);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-shadow: 0 0 calc(var(--u) * 4 * var(--glow)) var(--glow-accent);
+  transition: bottom 900ms var(--ease), transform 900ms var(--ease);
+  opacity: 0;
+}
+
+html[data-font="code"] .pct { font-size: calc(var(--u) * 7); }
+
+.has-progress .pct { opacity: 1; }
+
+.pct-unit {
+  font-size: 0.5em;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 0.06em;
+}
+
+.plate {
+  height: calc(var(--u) * 1.8);
+  border-radius: calc(var(--u) * 0.5);
+  background:
+    radial-gradient(circle at 30% 40%, rgb(255 255 255 / 0.18) 0 0.6px, transparent 1px) 0 0 / 5px 5px,
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, white), color-mix(in srgb, var(--accent) 78%, black));
+  box-shadow: 0 0 calc(var(--u) * 5 * var(--glow)) var(--glow-accent);
+}
+
+.is-offline .part-body,
+.is-loading .part-body { opacity: 0.5; }
+
+/* failed: hatch the printed portion */
+.is-failed .part-fill {
+  background:
+    repeating-linear-gradient(135deg, rgb(0 0 0 / 0.35) 0 calc(var(--u) * 1.2), transparent calc(var(--u) * 1.2) calc(var(--u) * 2.4)),
+    var(--paint);
+  filter: saturate(0.5);
+  animation: none;
+}
+
+/* cancelled: show where it stopped, quietly */
+.is-cancelled .part-fill { opacity: 0.45; animation: none; }
+
+/* ---------------------------------------------------------------- info -- */
+
+.info {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "top"
+    "job"
+    "hero"
+    "details";
+  grid-template-rows: auto auto 1fr auto;
+  row-gap: calc(var(--u) * 2.4);
+}
+
+.topline {
+  grid-area: top;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(var(--u) * 4);
+  font-size: calc(var(--u) * 5.4);
+  line-height: 1.2;
+}
+
+.printer {
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.8);
+  font-family: var(--font-display);
+  font-weight: var(--dw);
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: calc(var(--u) * 2.4);
+  height: calc(var(--u) * 2.4);
+  border-radius: 50%;
+  background: var(--status);
+}
+
+#app.is-running { --status: var(--fill); }
+#app.is-prepare { --status: var(--text); }
+#app.is-pause   { --status: var(--warn); }
+#app.is-finish  { --status: var(--ok); }
+#app.is-failed  { --status: var(--bad); }
+
+.is-running .status-dot {
+  box-shadow:
+    0 0 0 calc(var(--u) * 0.5) color-mix(in srgb, var(--text) 30%, transparent),
+    0 0 calc(var(--u) * 4 * var(--glow)) var(--glow-fill);
+}
+
+/* disco dot */
+html[data-progress="rainbow"] .is-running .status-dot {
+  background: #ff4040;
+  animation: hue 3s linear infinite;
+}
+@keyframes hue { to { filter: hue-rotate(360deg); } }
+
+.job {
+  grid-area: job;
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 7.6);
+  font-weight: var(--dw-mid);
+  font-stretch: calc(var(--stretch) + 5%);
+  line-height: 1.12;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hero {
+  grid-area: hero;
+  align-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: calc(var(--u) * 6);
+  row-gap: calc(var(--u) * 1.2);
+  min-width: 0;
+}
+
+.hero-main {
+  min-width: 0;
+  line-height: 0.95;
+}
+
+.time {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
+.time-num {
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 23);
+  font-weight: var(--dw);
+  font-stretch: calc(var(--stretch) - 2%);
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 calc(var(--u) * 7 * var(--glow)) var(--glow-accent);
+}
+
+html[data-font="code"] .time-num { font-size: calc(var(--u) * 19); letter-spacing: -0.05em; }
+
+.time-unit {
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 8);
+  font-weight: 400;
+  font-stretch: calc(var(--stretch) + 5%);
+  color: var(--muted);
+  margin: 0 calc(var(--u) * 3.2) 0 calc(var(--u) * 0.8);
+}
+
+.time-suffix {
+  font-size: calc(var(--u) * 6);
+  color: var(--muted);
+}
+
+.hero-text {
+  display: block;
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 12);
+  font-weight: var(--dw);
+  font-stretch: calc(var(--stretch) + 2%);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  text-shadow: 0 0 calc(var(--u) * 6 * var(--glow)) var(--glow-accent);
+}
+
+.hero-sub {
+  margin-left: auto;
+  font-size: calc(var(--u) * 5.4);
+  line-height: 1.3;
+  color: var(--muted);
+  max-width: 48ch;
+}
+
+.is-offline .hero-sub,
+.is-failed .hero-sub,
+.is-pause .hero-sub,
+.is-idle .hero-sub,
+.is-cancelled .hero-sub,
+.is-loading .hero-sub {
+  margin-left: 0;
+  flex-basis: 100%;
+}
+
+.is-pause .hero-sub { color: var(--warn); }
+.is-failed .hero-sub { color: var(--bad); }
+
+.details {
+  grid-area: details;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: calc(var(--u) * 7);
+  row-gap: calc(var(--u) * 1.6);
+  font-size: calc(var(--u) * 5.2);
+  line-height: 1.25;
+  padding-top: calc(var(--u) * 2.4);
+  border-top: 1px solid var(--faint);
+}
+
+.item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: calc(var(--u) * 1.8);
+  white-space: nowrap;
+}
+
+.k { color: var(--muted); }
+.v { font-weight: var(--bw); }
+.target { font-weight: 400; color: var(--muted); }
+
+.swatch {
+  display: inline-block;
+  width: calc(var(--u) * 3.6);
+  height: calc(var(--u) * 3.6);
+  margin-right: calc(var(--u) * 1.4);
+  vertical-align: -0.12em;
+  border-radius: calc(var(--u) * 0.8);
+  background: var(--fill);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 30%, transparent);
+}
+
+.is-stale .info,
+.is-stale .part { opacity: 0.6; }
+
+/* ------------------------------------------------------------ confetti -- */
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bit {
+  position: absolute;
+  top: -8vh;
+  width: calc(var(--u) * 1.8);
+  height: calc(var(--u) * 3.2);
+  border-radius: 1px;
+  animation: fall 3.5s cubic-bezier(0.25, 0.6, 0.5, 1) forwards;
+}
+
+.bit.round {
+  width: calc(var(--u) * 2.4);
+  height: calc(var(--u) * 2.4);
+  border-radius: 50%;
+}
+
+@keyframes fall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translate(var(--dx), 118vh) rotate(var(--rot)); opacity: 0; }
+}
+
+/* ---------------------------------------------------- very wide slots -- */
+/* e.g. 2536 x 696 or 1688 x 344: details move to their own column */
+
+@media (min-aspect-ratio: 3/1) {
+  .info {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "top top"
+      "job details"
+      "hero details";
+    grid-template-rows: auto auto 1fr;
+    column-gap: calc(var(--u) * 10);
+  }
+
+  .hero-sub { margin-left: 0; }
+
+  /* label / value pairs line up in two columns */
+  .details {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-self: end;
+    align-content: end;
+    column-gap: calc(var(--u) * 3);
+    border-top: 0;
+    border-left: 1px solid var(--faint);
+    padding: 0 0 0 calc(var(--u) * 6);
+    row-gap: calc(var(--u) * 2);
+  }
+
+  .details[hidden] { display: none !important; }
+  .item { display: contents; }
+}
+
+/* ---------------------------------------------------------- portrait -- */
+
+@media (orientation: portrait) {
+  #app {
+    grid-template-columns: 1fr;
+    grid-template-rows: 34% 1fr;
+    row-gap: calc(var(--u) * 6);
+  }
+
+  .part { width: var(--part-w); }
+
+  .job {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .time-num { font-size: calc(var(--u) * 17); }
+  .hero-text { font-size: calc(var(--u) * 10); }
+  .hero-sub { margin-left: 0; flex-basis: 100%; }
+}
+
+/* ------------------------------------------------- motion preferences -- */
+
+html[data-anim="off"] *,
+html[data-anim="off"] *::before,
+html[data-anim="off"] *::after {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; }
+  .part-fill, .part-nozzle, .pct { transition: none; }
+}

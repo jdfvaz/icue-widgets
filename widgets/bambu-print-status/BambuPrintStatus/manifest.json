@@ -1,0 +1,27 @@
+{
+  "author": "Community",
+  "id": "com.community.bambuprintstatus",
+  "name": "Bambu Print Status",
+  "description": "Live Bambu Lab print status with funky themes: progress, time left, layers, temperatures and active filament. Requires the companion bridge running on this PC.",
+  "version": "1.1.0",
+  "preview_icon": "resources/icon.svg",
+  "min_app_version": "5.47",
+  "min_framework_version": "1.4.0",
+  "os": [
+    {
+      "platform": "windows"
+    }
+  ],
+  "supported_devices": [
+    {
+      "type": "dashboard_lcd"
+    }
+  ],
+  "permissions": [
+    {
+      "type": "url",
+      "domain": "localhost",
+      "port": 8765
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Printer IPs, serial numbers and access codes used by bridges: never commit these
+widgets/*/bridge/config.json
+.env
+
+# Build output (attached to GitHub Releases instead)
+dist/
+*.icuewidget
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/

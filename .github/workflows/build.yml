@@ -1,0 +1,68 @@
+name: Build
+
+# Finds every widget in widgets/ (any folder with a manifest.json), validates
+# and packages it. Folders named "bridge" with a package.json are zipped too.
+# When you publish a GitHub Release, all files are attached to that release.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install the iCUE widget CLI
+        run: npm install -g icuewidget-cli
+
+      - name: Validate and package every widget
+        run: |
+          mkdir -p dist
+          count=0
+          while IFS= read -r manifest; do
+            dir=$(dirname "$manifest")
+            slug=$(echo "$dir" | cut -d/ -f2)
+            out="dist/${slug}.icuewidget"
+            if [ -e "$out" ]; then
+              out="dist/${slug}-$(basename "$dir" | tr '[:upper:]' '[:lower:]').icuewidget"
+            fi
+            echo "::group::$dir -> $out"
+            icuewidget validate "$dir"
+            icuewidget package "$dir" -o "$out"
+            echo "::endgroup::"
+            count=$((count + 1))
+          done < <(find widgets -name manifest.json -not -path "*/node_modules/*" | sort)
+          if [ "$count" -eq 0 ]; then echo "No widgets found in widgets/"; exit 1; fi
+          echo "Packaged $count widget(s)"
+
+      - name: Package bridges
+        run: |
+          for bridge in widgets/*/bridge; do
+            [ -f "$bridge/package.json" ] || continue
+            slug=$(echo "$bridge" | cut -d/ -f2)
+            for js in "$bridge"/*.js; do node --check "$js"; done
+            (cd "$bridge" && zip -qr "../../../dist/${slug}-bridge.zip" . -x "node_modules/*" -x "config.json")
+            echo "Packaged dist/${slug}-bridge.zip"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: icue-widgets
+          path: dist/
+
+      - name: Attach files to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber

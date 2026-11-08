@@ -1,0 +1,18 @@
+{
+  "name": "bambu-xeneon-bridge",
+  "version": "1.1.0",
+  "description": "Reads Bambu Lab print status over LAN MQTT and serves it to the XENEON EDGE iCUE widget",
+  "main": "bridge.js",
+  "private": true,
+  "scripts": {
+    "start": "node bridge.js",
+    "demo": "node bridge.js --demo"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "mqtt": "^5.16.1"
+  },
+  "license": "MIT"
+}

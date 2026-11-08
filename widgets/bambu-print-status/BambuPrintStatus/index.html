@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tr('Bambu Print Status')</title>
+  <link rel="icon" href="resources/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles/main.css" />
+
+  <meta name="x-icue-property" content="printerLabel" data-label="tr('Printer name')" data-type="textfield" data-default="''" />
+  <meta name="x-icue-property" content="bridgeUrl" data-label="tr('Bridge address')" data-type="textfield" data-default="'http://localhost:8765'" />
+  <meta name="x-icue-property" content="refreshSeconds" data-label="tr('Refresh every')" data-type="slider" data-default="3" data-min="2" data-max="30" data-step="1" data-unit-label="'s'" />
+  <meta name="x-icue-property" content="showTemperatures" data-label="tr('Show temperatures')" data-type="switch" data-default="true" />
+
+  <meta name="x-icue-property" content="theme" data-label="tr('Theme')" data-type="combobox" data-default="'classic'" data-values="[{'key':'classic','value':tr('Classic')},{'key':'neon','value':tr('Neon')},{'key':'synthwave','value':tr('Synthwave')},{'key':'disco','value':tr('Disco')},{'key':'lava','value':tr('Lava lamp')},{'key':'aurora','value':tr('Aurora')},{'key':'bubblegum','value':tr('Bubblegum')},{'key':'custom','value':tr('Custom colors')}]" />
+  <meta name="x-icue-property" content="backdrop" data-label="tr('Background style')" data-type="combobox" data-default="'auto'" data-values="[{'key':'auto','value':tr('Match theme')},{'key':'solid','value':tr('Solid')},{'key':'gradient','value':tr('Gradient')},{'key':'glow','value':tr('Floating glow')},{'key':'grid','value':tr('Retro grid')}]" />
+  <meta name="x-icue-property" content="progressStyle" data-label="tr('Progress style')" data-type="combobox" data-default="'auto'" data-values="[{'key':'auto','value':tr('Match theme')},{'key':'filament','value':tr('Filament color')},{'key':'theme','value':tr('Theme color')},{'key':'gradient','value':tr('Gradient')},{'key':'rainbow','value':tr('Rainbow')}]" />
+  <meta name="x-icue-property" content="fontStyle" data-label="tr('Font')" data-type="combobox" data-default="'technical'" data-values="[{'key':'technical','value':tr('Technical')},{'key':'clean','value':tr('Clean')},{'key':'chunky','value':tr('Chunky')},{'key':'handwritten','value':tr('Handwritten')},{'key':'code','value':tr('Code')}]" />
+  <meta name="x-icue-property" content="glowAmount" data-label="tr('Glow')" data-type="slider" data-default="40" data-min="0" data-max="100" data-step="5" data-unit-label="'%'" />
+  <meta name="x-icue-property" content="backgroundOpacity" data-label="tr('Background opacity')" data-type="slider" data-default="100" data-min="0" data-max="100" data-step="5" data-unit-label="'%'" />
+  <meta name="x-icue-property" content="animations" data-label="tr('Animations')" data-type="switch" data-default="true" />
+  <meta name="x-icue-property" content="celebrate" data-label="tr('Confetti when a print finishes')" data-type="switch" data-default="true" />
+
+  <meta name="x-icue-property" content="backgroundColor" data-label="tr('Background')" data-type="color" data-default="'#1b1035'" />
+  <meta name="x-icue-property" content="backgroundColor2" data-label="tr('Background 2 (gradient)')" data-type="color" data-default="'#3a1060'" />
+  <meta name="x-icue-property" content="textColor" data-label="tr('Text Color')" data-type="color" data-default="'#fff4e8'" />
+  <meta name="x-icue-property" content="accentColor" data-label="tr('Accent Color')" data-type="color" data-default="'#ffcc00'" />
+  <meta name="x-icue-property" content="progressColor" data-label="tr('Progress color')" data-type="color" data-default="'#00e0b8'" />
+
+  <script id="x-icue-groups" type="application/json">
+  [
+    {
+      "title": "tr('Bambu Print Status')",
+      "properties": ["printerLabel", "bridgeUrl", "refreshSeconds", "showTemperatures"],
+      "info": "tr('Printer name is optional. Leave it empty to use the name from the bridge config.')"
+    },
+    {
+      "title": "tr('Style')",
+      "properties": ["theme", "backdrop", "progressStyle", "fontStyle", "glowAmount", "backgroundOpacity", "animations", "celebrate"],
+      "info": "tr('Pick a theme, then fine-tune it. Match theme uses the look the theme was designed with.')"
+    },
+    {
+      "title": "tr('Custom colors')",
+      "properties": ["backgroundColor", "backgroundColor2", "textColor", "accentColor", "progressColor"],
+      "info": "tr('These colors are used when Theme is set to Custom colors. Accent colors the build plate and glow.')"
+    }
+  ]
+  </script>
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+
+  <main id="app" class="is-loading">
+    <div class="part" aria-hidden="true">
+      <div class="part-body">
+        <div class="part-fill-wrap"><div class="part-fill"></div></div>
+        <div class="part-nozzle"></div>
+        <div class="pct"><span id="pctValue">0</span><span class="pct-unit">%</span></div>
+      </div>
+      <div class="plate"></div>
+    </div>
+
+    <section class="info">
+      <div class="topline">
+        <span id="printerName" class="printer"></span>
+        <span class="status"><span class="status-dot"></span><span id="statusText"></span></span>
+      </div>
+      <div id="jobName" class="job"></div>
+      <div class="hero">
+        <div id="heroMain" class="hero-main"></div>
+        <div id="heroSub" class="hero-sub"></div>
+      </div>
+      <div id="details" class="details"></div>
+    </section>
+  </main>
+
+  <div id="confettiLayer" class="confetti" aria-hidden="true"></div>
+
+  <script src="scripts/main.js"></script>
+  <script>
+    icueEvents = {
+      onICUEInitialized: function (payload) { applySettings(payload && payload.settings); startPolling(); },
+      onDataUpdated: function (payload) { applySettings(payload && payload.settings); }
+    };
+
+    if (typeof iCUE_initialized !== 'undefined' && iCUE_initialized) {
+      applySettings();
+      startPolling();
+    }
+  </script>
+</body>
+</html>

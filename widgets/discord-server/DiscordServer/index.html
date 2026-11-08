@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tr('Discord Server')</title>
+  <link rel="icon" href="resources/icon.svg" type="image/svg+xml" />
+  <meta name="x-icue-widget-preview" content="resources/preview.png" />
+  <link rel="stylesheet" href="styles/main.css" />
+
+  <meta name="x-icue-property" content="serverId" data-label="tr('Server ID')" data-type="textfield" data-default="''" />
+  <meta name="x-icue-property" content="refreshSeconds" data-label="tr('Refresh every')" data-type="slider" data-default="60" data-min="30" data-max="600" data-step="15" data-unit-label="'s'" />
+  <meta name="x-icue-property" content="openIn" data-label="tr('Tapping opens')" data-type="combobox" data-default="'app'" data-values="[{'key':'app','value':tr('Discord app')},{'key':'browser','value':tr('Browser')}]" />
+
+  <meta name="x-icue-property" content="showMembers" data-label="tr('Show online members')" data-type="switch" data-default="true" />
+  <meta name="x-icue-property" content="showActivity" data-label="tr('Show what people are playing')" data-type="switch" data-default="true" />
+  <meta name="x-icue-property" content="showEmptyRooms" data-label="tr('Show empty voice channels')" data-type="switch" data-default="false" />
+
+  <meta name="x-icue-property" content="textColor" data-label="tr('Text Color')" data-type="color" data-default="'#eef0ff'" />
+  <meta name="x-icue-property" content="accentColor" data-label="tr('Accent Color')" data-type="color" data-default="'#7b83ff'" />
+  <meta name="x-icue-property" content="backgroundColor" data-label="tr('Background')" data-type="color" data-default="'#1e2033'" />
+  <meta name="x-icue-property" content="transparency" data-label="tr('Transparency')" data-type="slider" data-default="0" data-min="0" data-max="100" data-step="1" data-unit-label="'%'" />
+
+  <script id="x-icue-groups" type="application/json">
+  [
+    {
+      "title": "tr('Discord Server')",
+      "properties": ["serverId", "refreshSeconds", "openIn"],
+      "info": "tr('In Discord open Server Settings, then Engagement. Under Server Widget turn on Enable Server Widget, save, and copy the Server ID.')"
+    },
+    {
+      "title": "tr('Layout')",
+      "properties": ["showMembers", "showActivity", "showEmptyRooms"]
+    },
+    {
+      "title": "tr('Widget Personalization')",
+      "properties": ["textColor", "accentColor", "backgroundColor", "transparency"]
+    }
+  ]
+  </script>
+</head>
+<body>
+  <div id="root">
+    <main id="app" class="app">
+      <div id="top" class="top" role="button" tabindex="0">
+        <div id="srvIcon" class="srv-icon"></div>
+        <div class="srv-text">
+          <div id="srvName" class="srv-name">Discord server</div>
+          <div id="stats" class="stats" hidden>
+            <div class="stat stat-voice"><span id="voiceCount" class="num">0</span><span class="lbl">in voice</span></div>
+            <div class="stat stat-online"><span id="onlineCount" class="num">0</span><span class="lbl">online</span></div>
+            <div id="memberStat" class="stat stat-members" hidden><span id="memberCount" class="num">0</span><span class="lbl">members</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="notice" class="notice" hidden></div>
+
+      <div id="main" class="main" hidden>
+        <section class="voice"><div id="rooms" class="rooms"></div></section>
+        <section class="people"><div id="members" class="members"></div></section>
+      </div>
+      <div id="faces" class="faces"></div>
+
+      <div id="message" class="message" hidden>
+        <div id="msgTitle" class="msg-title"></div>
+        <div id="msgDetail" class="msg-detail"></div>
+        <div id="msgCode" class="msg-code" hidden></div>
+      </div>
+    </main>
+  </div>
+  <script src="scripts/widget.js"></script>
+</body>
+</html>

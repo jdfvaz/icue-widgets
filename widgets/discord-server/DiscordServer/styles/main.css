@@ -1,0 +1,434 @@
+/* Discord Server widget for iCUE - XENEON EDGE
+   Layout follows the tile, not a fixed design:
+   - default (squarish and tall tiles): voice on top, online list below
+   - wide tiles (half or full panel): voice and online list side by side
+   - short tiles: whichever of the two has something going on
+   - small tiles: counts plus a row of faces
+   Sizes use container query units so text scales with the tile. */
+
+:root {
+  --text: #eef0ff;
+  --accent: #7b83ff;
+  --bg: #1e2033;
+  --alpha: 100%;
+
+  --online: #3ba55d;
+  --idle: #f0b232;
+  --dnd: #f23f43;
+
+  /* Bahnschrift ships with Windows 10/11 and matches the iCUE sensor and
+     clock widgets. Segoe UI Variable carries names and small text. */
+  --display: "Bahnschrift SemiCondensed", "Bahnschrift", "DIN Alternate", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#root {
+  container-type: size;
+  width: 100vw;
+  height: 100vh;
+}
+
+.app {
+  --u: clamp(14px, calc(8px + 2.1cqmin), 28px);
+  --muted: color-mix(in srgb, var(--text) 58%, var(--bg));
+  --faint: color-mix(in srgb, var(--text) 7%, transparent);
+  --line: color-mix(in srgb, var(--text) 14%, transparent);
+
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.8);
+  padding: calc(var(--u) * 0.9) calc(var(--u) * 1.05);
+  font-family: var(--ui);
+  font-size: var(--u);
+  line-height: 1.25;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) var(--alpha), transparent);
+  border-radius: calc(var(--u) * 0.6);
+}
+
+/* ---------- Server bar ---------- */
+
+.top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  min-width: 0;
+  cursor: pointer;
+  outline: none;
+  border-radius: 0.5em;
+}
+.top:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.top:active .srv-name { opacity: 0.75; }
+
+.srv-icon {
+  flex: none;
+  width: 2.75em;
+  height: 2.75em;
+  border-radius: 0.75em;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--accent);
+  color: var(--bg);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.05em;
+}
+.srv-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+.srv-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+}
+
+.srv-name {
+  min-width: 0;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.45em;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stats {
+  display: flex;
+  align-items: baseline;
+  gap: 1.15em;
+  white-space: nowrap;
+}
+.stat { display: flex; align-items: baseline; gap: 0.3em; }
+.num {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.25em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.lbl { color: var(--muted); font-size: 0.88em; }
+.stat-voice .num { color: var(--accent); }
+.stat-voice.is-zero .num { color: var(--muted); }
+
+/* ---------- Notice line (sample data, stale data) ---------- */
+
+.notice {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  min-width: 0;
+  font-size: 0.85em;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.notice::before {
+  content: "";
+  flex: none;
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 50%;
+  background: var(--idle);
+}
+.notice.is-demo::before { background: var(--accent); }
+.notice span { overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- Main area (default: stacked) ---------- */
+
+.main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.9em;
+}
+
+.voice, .people { min-height: 0; min-width: 0; }
+.people {
+  border-top: 1px solid var(--line);
+  padding-top: 0.9em;
+}
+
+.rooms, .members, .room-people, .faces { position: relative; overflow: hidden; }
+
+.rooms {
+  max-height: 46cqh;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
+  align-content: start;
+  gap: 0.6em;
+}
+
+/* Members switched off: voice gets the whole area. */
+.main.no-members { grid-template-rows: minmax(0, 1fr); }
+.main.no-members .people { display: none; }
+.main.no-members .rooms { max-height: none; height: 100%; }
+
+/* Nobody in voice: one quiet line, the online list takes the space. */
+.voice-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  color: var(--muted);
+}
+.voice-empty svg { flex: none; width: 1.1em; height: 1.1em; }
+
+/* ---------- Voice channels ---------- */
+
+/* A voice channel reads like a channel strip on a mixer: the rail on the left
+   lights up in the accent color while people are connected. */
+.room {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  min-width: 0;
+  padding: 0.6em 0.8em 0.7em 1em;
+  border-radius: 0.3em 0.6em 0.6em 0.3em;
+  background: var(--faint);
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+.room::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.4em;
+  bottom: 0.4em;
+  width: 0.22em;
+  border-radius: 0.2em;
+  background: var(--line);
+}
+.room.is-live { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.room.is-live::before {
+  background: var(--accent);
+  box-shadow: 0 0 0.7em color-mix(in srgb, var(--accent) 75%, transparent);
+}
+.room:active { transform: scale(0.985); filter: brightness(1.18); }
+.room:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+
+.room-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  min-width: 0;
+  font-weight: 600;
+}
+.room-head svg { flex: none; width: 1.05em; height: 1.05em; color: var(--muted); }
+.room.is-live .room-head svg { color: var(--accent); }
+.room-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room:not(.is-live) .room-name { color: var(--muted); font-weight: 500; }
+.room-count {
+  font-family: var(--display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 1.3em;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.room-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45em 0.7em;
+  padding-bottom: 0.25em;
+  max-height: calc(2 * 2em + 0.45em + 0.25em);
+}
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  min-width: 0;
+  max-width: 100%;
+}
+.chip .av { width: 2em; height: 2em; }
+.chip-name {
+  max-width: 9em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chip.is-muted .chip-name { color: var(--muted); }
+
+/* ---------- Online members ---------- */
+
+.members {
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5em, 1fr));
+  grid-auto-rows: min-content;
+  align-content: start;
+  gap: 0.6em 1em;
+}
+.member { display: flex; align-items: center; gap: 0.65em; min-width: 0; }
+.m-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.m-name, .m-act { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-name { font-weight: 600; }
+.m-act { font-size: 0.82em; color: var(--muted); }
+
+/* Few people online: bigger rows so the tile doesn't look empty. */
+.members.roomy { grid-template-columns: repeat(auto-fill, minmax(13em, 1fr)); gap: 0.85em 1.1em; }
+.members.roomy .av { width: 2.7em; height: 2.7em; }
+.members.roomy .av .ini { font-size: 1em; }
+.members.roomy .m-name { font-size: 1.12em; }
+.members.roomy .m-act { font-size: 0.88em; }
+
+.more {
+  display: flex;
+  align-items: center;
+  font-family: var(--display);
+  color: var(--muted);
+  white-space: nowrap;
+  padding: 0 0.2em;
+}
+.more-rooms { padding: 0.6em 0.8em; }
+
+.empty { color: var(--muted); padding: 0.3em 0; }
+
+/* ---------- Avatars ---------- */
+
+.av {
+  position: relative;
+  flex: none;
+  width: 2.25em;
+  height: 2.25em;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--av-bg, #5b6ee1);
+  color: #fff;
+}
+.av .ini { font-family: var(--display); font-weight: 600; font-size: 0.85em; }
+.av img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.av .dot {
+  position: absolute;
+  right: -0.06em;
+  bottom: -0.06em;
+  width: 0.62em;
+  height: 0.62em;
+  border-radius: 50%;
+  background: var(--online);
+  box-shadow: 0 0 0 0.16em var(--bg);
+}
+.av .dot.is-idle { background: var(--idle); }
+.av .dot.is-dnd { background: var(--dnd); }
+.av .badge {
+  position: absolute;
+  right: -0.22em;
+  bottom: -0.22em;
+  width: 0.95em;
+  height: 0.95em;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--dnd);
+  box-shadow: 0 0 0 0.14em var(--bg);
+}
+.av .badge svg { width: 0.66em; height: 0.66em; color: #fff; }
+
+/* ---------- Compact face row (small tiles) ---------- */
+
+.faces {
+  display: none;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  height: 2.4em;
+  padding-left: 0.45em;
+}
+.faces .av {
+  width: 2.3em;
+  height: 2.3em;
+  margin-left: -0.45em;
+  box-shadow: 0 0 0 0.16em var(--bg);
+}
+.faces.is-voice .av {
+  margin-left: -0.3em;
+  box-shadow: 0 0 0 0.14em var(--bg), 0 0 0 0.28em var(--accent);
+}
+.faces .more { height: 2.3em; padding-left: 0.6em; }
+
+/* ---------- Full-panel message (setup problems) ---------- */
+
+.message {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4em;
+  max-width: 36em;
+  cursor: pointer;
+}
+.msg-title { font-family: var(--display); font-weight: 600; font-size: 1.45em; line-height: 1.1; }
+.msg-detail { color: var(--muted); line-height: 1.4; }
+.msg-code { margin-top: 0.4em; font-size: 0.8em; color: var(--muted); opacity: 0.85; }
+
+/* ---------- Wide tiles: side by side ---------- */
+
+@container (min-width: 1000px) and (min-aspect-ratio: 8/5) {
+  .srv-icon { width: 2.4em; height: 2.4em; border-radius: 0.65em; }
+  .srv-text { flex-direction: row; align-items: center; gap: 1.2em; }
+  .srv-name { flex: 1; font-size: 1.55em; }
+  .stats { gap: 1.3em; }
+  .num { font-size: 1.9em; }
+
+  /* The voice column grows with the number of active channels (set from JS). */
+  .main { grid-template-columns: minmax(0, var(--voice-fr, 3fr)) minmax(0, 2fr); grid-template-rows: minmax(0, 1fr); gap: 1.2em; }
+  .rooms { max-height: none; height: 100%; grid-template-columns: repeat(auto-fit, minmax(14em, 1fr)); }
+  .people { border-top: 0; padding-top: 0; border-left: 1px solid var(--line); padding-left: 1.2em; }
+
+  .main.no-members { grid-template-columns: minmax(0, 1fr); }
+
+  .main.no-voice { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .main.no-voice .rooms { height: auto; }
+  .main.no-voice .people { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 0.9em; }
+}
+
+/* ---------- Short tiles (not wide): show what's happening ---------- */
+
+@container (max-height: 430px) and (max-width: 999.98px) {
+  .main:not(.no-voice) { grid-template-rows: minmax(0, 1fr); }
+  .main:not(.no-voice) .people { display: none; }
+  .main:not(.no-voice) .rooms { max-height: none; height: 100%; }
+  .stat-members { display: none !important; }
+}
+
+/* ---------- Small tiles: counts plus a row of faces ---------- */
+
+@container (max-height: 240px) or (max-width: 330px) {
+  .main { display: none !important; }
+  .faces.has-faces { display: flex; margin-top: auto; }
+  .srv-icon { width: 2.3em; height: 2.3em; }
+  .srv-name { font-size: 1.3em; }
+  .stat-members { display: none !important; }
+  .notice { font-size: 0.78em; }
+}
