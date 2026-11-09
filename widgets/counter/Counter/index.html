@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tr('Counter')</title>
+  <link rel="icon" href="resources/icon.svg" type="image/svg+xml" />
+  <meta name="x-icue-widget-preview" content="resources/icon.svg" />
+  <link rel="stylesheet" href="styles/main.css" />
+
+  <meta name="x-icue-property" content="step" data-label="tr('Step size')" data-type="slider" data-default="1" data-min="1" data-max="100" data-step="1" />
+  <meta name="x-icue-property" content="label" data-label="tr('Label')" data-type="textfield" data-default="''" />
+  <meta name="x-icue-property" content="confirmReset" data-label="tr('Confirm before reset')" data-type="switch" data-default="true" />
+
+  <meta name="x-icue-property" content="textColor" data-label="tr('Text Color')" data-type="color" data-default="'#eef0ff'" />
+  <meta name="x-icue-property" content="accentColor" data-label="tr('Accent Color')" data-type="color" data-default="'#7b83ff'" />
+  <meta name="x-icue-property" content="backgroundColor" data-label="tr('Background')" data-type="color" data-default="'#1e2033'" />
+  <meta name="x-icue-property" content="transparency" data-label="tr('Transparency')" data-type="slider" data-default="0" data-min="0" data-max="100" data-step="1" data-unit-label="'%'" />
+
+  <script id="x-icue-groups" type="application/json">
+  [
+    {
+      "title": "tr('Counter')",
+      "properties": ["step", "label", "confirmReset"],
+      "info": "tr('Tap the number to add one step. Press and hold the reset button to clear it back to zero.')"
+    },
+    {
+      "title": "tr('Widget Personalization')",
+      "properties": ["textColor", "accentColor", "backgroundColor", "transparency"]
+    }
+  ]
+  </script>
+</head>
+<body>
+  <div id="root">
+    <main id="app" class="app">
+      <button id="labelText" class="label" type="button" hidden></button>
+
+      <button id="count" class="count" type="button" aria-label="Increase counter">
+        <span id="countValue" class="count-value">0</span>
+      </button>
+
+      <button id="reset" class="reset" type="button" aria-label="Reset counter" title="Reset">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 11A8 8 0 1 0 17.7 16.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div id="confirm" class="confirm" hidden>
+        <div class="confirm-text">tr('Reset to 0?')</div>
+        <div class="confirm-actions">
+          <button id="confirmYes" class="confirm-btn confirm-yes" type="button">tr('Reset')</button>
+          <button id="confirmNo" class="confirm-btn confirm-no" type="button">tr('Cancel')</button>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="scripts/widget.js"></script>
+</body>
+</html>

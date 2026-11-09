@@ -1,0 +1,22 @@
+{
+  "author": "Community",
+  "id": "com.community.counter",
+  "name": "Counter",
+  "description": "A simple tap counter. Tap the widget to add one, hold the reset button to go back to zero.",
+  "version": "1.0.0",
+  "preview_icon": "resources/icon.svg",
+  "min_app_version": "5.52",
+  "min_framework_version": "1.4.0",
+  "os": [
+    {
+      "platform": "windows"
+    }
+  ],
+  "supported_devices": [
+    {
+      "type": "dashboard_lcd"
+    }
+  ],
+  "interactive": true,
+  "permissions": []
+}

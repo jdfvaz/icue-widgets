@@ -1,0 +1,16 @@
+{
+  "widget_name": "Counter",
+  "Counter": "Counter",
+  "Step size": "Step size",
+  "Label": "Label",
+  "Confirm before reset": "Confirm before reset",
+  "Tap the number to add one step. Press and hold the reset button to clear it back to zero.": "Tap the number to add one step. Press and hold the reset button to clear it back to zero.",
+  "Widget Personalization": "Widget Personalization",
+  "Text Color": "Text Color",
+  "Accent Color": "Accent Color",
+  "Background": "Background",
+  "Transparency": "Transparency",
+  "Reset to 0?": "Reset to 0?",
+  "Reset": "Reset",
+  "Cancel": "Cancel"
+}

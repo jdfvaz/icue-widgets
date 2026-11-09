@@ -1,0 +1,155 @@
+/* Counter widget for iCUE - XENEON EDGE
+   Big tappable number in the middle, optional label above it, a small
+   reset button in the corner. Sizes use container query units so text
+   scales with the tile. */
+
+:root {
+  --text: #eef0ff;
+  --accent: #7b83ff;
+  --bg: #1e2033;
+  --alpha: 100%;
+
+  --display: "Bahnschrift SemiCondensed", "Bahnschrift", "DIN Alternate", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#root {
+  container-type: size;
+  width: 100vw;
+  height: 100vh;
+}
+
+.app {
+  --u: clamp(14px, calc(8px + 2.1cqmin), 28px);
+  --faint: color-mix(in srgb, var(--text) 7%, transparent);
+  --line: color-mix(in srgb, var(--text) 14%, transparent);
+
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 0.4);
+  padding: calc(var(--u) * 0.9) calc(var(--u) * 1.05);
+  font-family: var(--ui);
+  font-size: var(--u);
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) var(--alpha), transparent);
+  border-radius: calc(var(--u) * 0.6);
+}
+
+.label {
+  all: unset;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.1em;
+  color: color-mix(in srgb, var(--text) 65%, var(--bg));
+  text-align: center;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.count {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  min-width: 2.2em;
+  padding: 0.1em 0.3em;
+  border-radius: 0.5em;
+  transition: transform 90ms ease, filter 90ms ease;
+}
+.count:hover { background: var(--faint); }
+.count:active { transform: scale(0.96); filter: brightness(1.15); }
+.count:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+
+.count-value {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 3.4em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+@keyframes ctr-bump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.count.is-bump .count-value { animation: ctr-bump 180ms ease-out; }
+
+.reset {
+  all: unset;
+  box-sizing: border-box;
+  position: absolute;
+  right: 0.7em;
+  bottom: 0.7em;
+  width: 2em;
+  height: 2em;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: color-mix(in srgb, var(--text) 70%, var(--bg));
+  background: var(--faint);
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease, color 120ms ease;
+}
+.reset svg { width: 1.1em; height: 1.1em; }
+.reset:hover { color: var(--text); }
+.reset:active { transform: scale(0.9); filter: brightness(1.2); }
+.reset:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+
+.confirm {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9em;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  border-radius: calc(var(--u) * 0.6);
+  text-align: center;
+  padding: 1em;
+}
+.confirm-text { font-family: var(--display); font-weight: 600; font-size: 1.3em; }
+.confirm-actions { display: flex; gap: 0.7em; }
+.confirm-btn {
+  all: unset;
+  box-sizing: border-box;
+  padding: 0.5em 1.1em;
+  border-radius: 0.5em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 120ms ease, transform 120ms ease;
+}
+.confirm-btn:active { transform: scale(0.96); }
+.confirm-yes { background: var(--accent); color: var(--bg); }
+.confirm-yes:hover { filter: brightness(1.1); }
+.confirm-no { background: var(--faint); color: var(--text); }
+.confirm-no:hover { background: color-mix(in srgb, var(--text) 14%, transparent); }
+
+/* ---------- Small tiles: shrink the chrome ---------- */
+
+@container (max-height: 240px) or (max-width: 220px) {
+  .label { font-size: 0.95em; }
+  .count-value { font-size: 2.2em; }
+  .reset { width: 1.7em; height: 1.7em; right: 0.5em; bottom: 0.5em; }
+}

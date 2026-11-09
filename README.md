@@ -8,6 +8,7 @@ Custom widgets for CORSAIR iCUE, made for the XENEON EDGE.
 |---|---|---|
 | <img src="widgets/bambu-print-status/docs/preview.png" width="320" alt="Bambu Print Status"> | **[Bambu Print Status](widgets/bambu-print-status/)** | Live Bambu Lab 3D print progress, time left, layers, temperatures and loaded filament, with funky themes and custom colors. Needs a small bridge app on your PC. |
 | <img src="widgets/discord-server/docs/preview.png" width="320" alt="Discord Server"> | **[Discord Server](widgets/discord-server/)** | Who's in which voice channel (with mute and deafen), who's online and what they're playing, plus member counts. Tap a voice channel to jump to it in Discord. Needs the server widget turned on in Discord. |
+| | **[Counter](widgets/counter/)** | A simple tap counter. Tap the number to add a step, tap the corner button to reset (with an optional confirmation). |
 
 ## Install a widget
 
