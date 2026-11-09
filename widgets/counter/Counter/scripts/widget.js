@@ -1,22 +1,31 @@
 /*
  * Counter widget for CORSAIR iCUE (XENEON EDGE)
  *
- * Tap the big number to add one step. The reset button asks for
- * confirmation (optional) before clearing the count back to zero.
- * The count is kept in localStorage so it survives a restart of iCUE.
+ * Tap a number to add one step. Each counter has its own reset button,
+ * which asks for confirmation (optional) before clearing it back to zero.
+ * Set "Number of counters" (1-4) to track more than one thing in the same
+ * widget, each with its own label. Counts are kept in localStorage so they
+ * survive a restart of iCUE.
  */
 
+var CTR_MAX = 4;
+
 var CTR_DEFAULTS = {
+  counterCount: 1,
   step: 1,
-  label: "",
   confirmReset: true,
+  label1: "",
+  label2: "",
+  label3: "",
+  label4: "",
   textColor: "#eef0ff",
   accentColor: "#7b83ff",
   backgroundColor: "#1e2033",
   transparency: 0
 };
 
-var CTR_STORAGE_KEY = "icueCounterWidget.value";
+var CTR_LEGACY_KEY = "icueCounterWidget.value"; // single-counter version 1.0.0
+function ctrStorageKey(i) { return "icueCounterWidget.value." + i; }
 
 // Reads a value iCUE injected for an x-icue-property (pattern from the iCUE docs).
 function ctrReadProperty(name) {
@@ -33,7 +42,8 @@ function ctrReadProperty(name) {
 
 var CounterWidget = (function () {
   var settings = Object.assign({}, CTR_DEFAULTS);
-  var count = 0;
+  var counts = [0, 0, 0, 0]; // index 0 => counter 1, ... index 3 => counter 4
+  var pendingReset = null;
 
   function $(id) { return document.getElementById(id); }
 
@@ -52,59 +62,72 @@ var CounterWidget = (function () {
     return next;
   }
 
-  function loadCount() {
-    try {
-      var raw = window.localStorage ? window.localStorage.getItem(CTR_STORAGE_KEY) : null;
-      var n = raw !== null ? Number(raw) : 0;
-      return isFinite(n) ? n : 0;
-    } catch (e) {
-      return 0;
+  function loadCounts() {
+    var out = [0, 0, 0, 0];
+    for (var i = 1; i <= CTR_MAX; i++) {
+      try {
+        var raw = window.localStorage ? window.localStorage.getItem(ctrStorageKey(i)) : null;
+        if (raw === null && i === 1) {
+          // migrate the single-counter version's value
+          raw = window.localStorage ? window.localStorage.getItem(CTR_LEGACY_KEY) : null;
+        }
+        var n = raw !== null ? Number(raw) : 0;
+        out[i - 1] = isFinite(n) ? n : 0;
+      } catch (e) {}
     }
+    return out;
   }
 
-  function saveCount() {
+  function saveCount(i) {
     try {
-      if (window.localStorage) window.localStorage.setItem(CTR_STORAGE_KEY, String(count));
+      if (window.localStorage) window.localStorage.setItem(ctrStorageKey(i), String(counts[i - 1]));
     } catch (e) {}
   }
 
-  function renderCount() {
-    $("countValue").textContent = String(count);
+  function clampCount(n) {
+    n = Math.round(Number(n) || 1);
+    return Math.max(1, Math.min(CTR_MAX, n));
   }
 
-  function bump() {
+  function renderValue(i) {
+    $("tileValue-" + i).textContent = String(counts[i - 1]);
+  }
+
+  function bump(i) {
     var step = settings.step || 1;
-    count += step;
-    saveCount();
-    renderCount();
-    pulse();
+    counts[i - 1] += step;
+    saveCount(i);
+    renderValue(i);
+    pulse(i);
   }
 
-  function pulse() {
-    var el = $("count");
+  function pulse(i) {
+    var el = $("tileCount-" + i);
     el.classList.remove("is-bump");
-    // Force reflow so the animation restarts on quick repeated taps.
-    void el.offsetWidth;
+    void el.offsetWidth; // restart the animation on quick repeated taps
     el.classList.add("is-bump");
   }
 
-  function doReset() {
-    count = 0;
-    saveCount();
-    renderCount();
+  function doReset(i) {
+    counts[i - 1] = 0;
+    saveCount(i);
+    renderValue(i);
     hideConfirm();
   }
 
-  function showConfirm() {
+  function showConfirm(i) {
+    pendingReset = i;
     $("confirm").hidden = false;
   }
 
   function hideConfirm() {
+    pendingReset = null;
     $("confirm").hidden = true;
   }
 
   function apply(extra) {
     settings = readSettings(extra);
+    var n = clampCount(settings.counterCount);
 
     var s = document.documentElement.style;
     s.setProperty("--text", settings.textColor);
@@ -112,32 +135,42 @@ var CounterWidget = (function () {
     s.setProperty("--bg", settings.backgroundColor);
     s.setProperty("--alpha", Math.max(0, Math.min(100, 100 - settings.transparency)) + "%");
 
-    var labelEl = $("labelText");
-    if (settings.label) {
-      labelEl.textContent = settings.label;
-      labelEl.hidden = false;
-    } else {
-      labelEl.hidden = true;
-    }
+    var container = $("counters");
+    container.className = "counters count-" + n;
 
-    renderCount();
+    for (var i = 1; i <= CTR_MAX; i++) {
+      $("tile-" + i).hidden = i > n;
+      var labelEl = $("tileLabel-" + i);
+      var labelText = settings["label" + i];
+      if (labelText) {
+        labelEl.textContent = labelText;
+        labelEl.hidden = false;
+      } else {
+        labelEl.hidden = true;
+      }
+      renderValue(i);
+    }
   }
 
   function init() {
-    count = loadCount();
-    renderCount();
+    counts = loadCounts();
 
-    $("count").addEventListener("click", bump);
-    $("count").addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bump(); }
+    for (var i = 1; i <= CTR_MAX; i++) {
+      (function (idx) {
+        $("tileCount-" + idx).addEventListener("click", function () { bump(idx); });
+        $("tileCount-" + idx).addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bump(idx); }
+        });
+        $("tileReset-" + idx).addEventListener("click", function () {
+          if (settings.confirmReset) showConfirm(idx);
+          else doReset(idx);
+        });
+      })(i);
+    }
+
+    $("confirmYes").addEventListener("click", function () {
+      if (pendingReset !== null) doReset(pendingReset);
     });
-
-    $("reset").addEventListener("click", function () {
-      if (settings.confirmReset) showConfirm();
-      else doReset();
-    });
-
-    $("confirmYes").addEventListener("click", doReset);
     $("confirmNo").addEventListener("click", hideConfirm);
   }
 

@@ -8,9 +8,14 @@
   <meta name="x-icue-widget-preview" content="resources/icon.svg" />
   <link rel="stylesheet" href="styles/main.css" />
 
+  <meta name="x-icue-property" content="counterCount" data-label="tr('Number of counters')" data-type="slider" data-default="1" data-min="1" data-max="4" data-step="1" />
   <meta name="x-icue-property" content="step" data-label="tr('Step size')" data-type="slider" data-default="1" data-min="1" data-max="100" data-step="1" />
-  <meta name="x-icue-property" content="label" data-label="tr('Label')" data-type="textfield" data-default="''" />
   <meta name="x-icue-property" content="confirmReset" data-label="tr('Confirm before reset')" data-type="switch" data-default="true" />
+
+  <meta name="x-icue-property" content="label1" data-label="tr('Counter 1 label')" data-type="textfield" data-default="''" />
+  <meta name="x-icue-property" content="label2" data-label="tr('Counter 2 label')" data-type="textfield" data-default="''" />
+  <meta name="x-icue-property" content="label3" data-label="tr('Counter 3 label')" data-type="textfield" data-default="''" />
+  <meta name="x-icue-property" content="label4" data-label="tr('Counter 4 label')" data-type="textfield" data-default="''" />
 
   <meta name="x-icue-property" content="textColor" data-label="tr('Text Color')" data-type="color" data-default="'#eef0ff'" />
   <meta name="x-icue-property" content="accentColor" data-label="tr('Accent Color')" data-type="color" data-default="'#7b83ff'" />
@@ -21,8 +26,13 @@
   [
     {
       "title": "tr('Counter')",
-      "properties": ["step", "label", "confirmReset"],
-      "info": "tr('Tap the number to add one step. Press and hold the reset button to clear it back to zero.')"
+      "properties": ["counterCount", "step", "confirmReset"],
+      "info": "tr('Tap a number to add one step. Press its reset button to clear it back to zero. Use Number of counters to track more than one thing in the same widget.')"
+    },
+    {
+      "title": "tr('Labels')",
+      "properties": ["label1", "label2", "label3", "label4"],
+      "info": "tr('Only labels up to Number of counters are shown.')"
     },
     {
       "title": "tr('Widget Personalization')",
@@ -34,21 +44,59 @@
 <body>
   <div id="root">
     <main id="app" class="app">
-      <button id="labelText" class="label" type="button" hidden></button>
-
-      <button id="count" class="count" type="button" aria-label="Increase counter">
-        <span id="countValue" class="count-value">0</span>
-      </button>
-
-      <button id="reset" class="reset" type="button" aria-label="Reset counter" title="Reset">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M20 11A8 8 0 1 0 17.7 16.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-          <path d="M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
+      <div id="counters" class="counters count-1">
+        <div class="tile" id="tile-1" data-index="1">
+          <button class="tile-label" id="tileLabel-1" type="button" hidden></button>
+          <button class="tile-count" id="tileCount-1" type="button" aria-label="Increase counter 1">
+            <span class="tile-value" id="tileValue-1">0</span>
+          </button>
+          <button class="tile-reset" id="tileReset-1" type="button" aria-label="Reset counter 1" title="Reset">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 11A8 8 0 1 0 17.7 16.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="tile" id="tile-2" data-index="2" hidden>
+          <button class="tile-label" id="tileLabel-2" type="button" hidden></button>
+          <button class="tile-count" id="tileCount-2" type="button" aria-label="Increase counter 2">
+            <span class="tile-value" id="tileValue-2">0</span>
+          </button>
+          <button class="tile-reset" id="tileReset-2" type="button" aria-label="Reset counter 2" title="Reset">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 11A8 8 0 1 0 17.7 16.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="tile" id="tile-3" data-index="3" hidden>
+          <button class="tile-label" id="tileLabel-3" type="button" hidden></button>
+          <button class="tile-count" id="tileCount-3" type="button" aria-label="Increase counter 3">
+            <span class="tile-value" id="tileValue-3">0</span>
+          </button>
+          <button class="tile-reset" id="tileReset-3" type="button" aria-label="Reset counter 3" title="Reset">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 11A8 8 0 1 0 17.7 16.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="tile" id="tile-4" data-index="4" hidden>
+          <button class="tile-label" id="tileLabel-4" type="button" hidden></button>
+          <button class="tile-count" id="tileCount-4" type="button" aria-label="Increase counter 4">
+            <span class="tile-value" id="tileValue-4">0</span>
+          </button>
+          <button class="tile-reset" id="tileReset-4" type="button" aria-label="Reset counter 4" title="Reset">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 11A8 8 0 1 0 17.7 16.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
 
       <div id="confirm" class="confirm" hidden>
-        <div class="confirm-text">Reset to 0?</div>
+        <div class="confirm-text" id="confirmText">Reset to 0?</div>
         <div class="confirm-actions">
           <button id="confirmYes" class="confirm-btn confirm-yes" type="button">Reset</button>
           <button id="confirmNo" class="confirm-btn confirm-no" type="button">Cancel</button>

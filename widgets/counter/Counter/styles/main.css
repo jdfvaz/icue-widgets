@@ -1,7 +1,7 @@
 /* Counter widget for iCUE - XENEON EDGE
-   Big tappable number in the middle, optional label above it, a small
-   reset button in the corner. Sizes use container query units so text
-   scales with the tile. */
+   One to four tappable counters, laid out in a responsive grid. Each tile
+   has its own optional label, big tappable number, and small reset button.
+   Sizes use container query units so text scales with the tile. */
 
 :root {
   --text: #eef0ff;
@@ -40,9 +40,6 @@ html, body {
   height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--u) * 0.4);
   padding: calc(var(--u) * 0.9) calc(var(--u) * 1.05);
   font-family: var(--ui);
   font-size: var(--u);
@@ -51,7 +48,38 @@ html, body {
   border-radius: calc(var(--u) * 0.6);
 }
 
-.label {
+.counters {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 0.6em;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+/* Side by side for 2, 2x2 for 3-4 (third/fourth tile share the grid). */
+.counters.count-2 { grid-template-columns: 1fr 1fr; }
+.counters.count-3,
+.counters.count-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+
+.tile {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2em;
+  border-radius: 0.5em;
+}
+.counters.count-2 .tile,
+.counters.count-3 .tile,
+.counters.count-4 .tile {
+  background: var(--faint);
+}
+
+.tile-label {
   all: unset;
   font-family: var(--display);
   font-weight: 600;
@@ -63,8 +91,11 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.counters.count-2 .tile-label,
+.counters.count-3 .tile-label,
+.counters.count-4 .tile-label { font-size: 0.85em; }
 
-.count {
+.tile-count {
   all: unset;
   box-sizing: border-box;
   display: grid;
@@ -75,11 +106,11 @@ html, body {
   border-radius: 0.5em;
   transition: transform 90ms ease, filter 90ms ease;
 }
-.count:hover { background: var(--faint); }
-.count:active { transform: scale(0.96); filter: brightness(1.15); }
-.count:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.tile-count:hover { background: var(--faint); }
+.tile-count:active { transform: scale(0.96); filter: brightness(1.15); }
+.tile-count:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
 
-.count-value {
+.tile-value {
   font-family: var(--display);
   font-weight: 700;
   font-size: 3.4em;
@@ -87,22 +118,25 @@ html, body {
   font-variant-numeric: tabular-nums;
   color: var(--accent);
 }
+.counters.count-2 .tile-value { font-size: 2.3em; }
+.counters.count-3 .tile-value,
+.counters.count-4 .tile-value { font-size: 1.7em; }
 
 @keyframes ctr-bump {
   0% { transform: scale(1); }
   40% { transform: scale(1.12); }
   100% { transform: scale(1); }
 }
-.count.is-bump .count-value { animation: ctr-bump 180ms ease-out; }
+.tile-count.is-bump .tile-value { animation: ctr-bump 180ms ease-out; }
 
-.reset {
+.tile-reset {
   all: unset;
   box-sizing: border-box;
   position: absolute;
-  right: 0.7em;
-  bottom: 0.7em;
-  width: 2em;
-  height: 2em;
+  right: 0.5em;
+  bottom: 0.5em;
+  width: 1.8em;
+  height: 1.8em;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -111,10 +145,11 @@ html, body {
   cursor: pointer;
   transition: transform 120ms ease, filter 120ms ease, color 120ms ease;
 }
-.reset svg { width: 1.1em; height: 1.1em; }
-.reset:hover { color: var(--text); }
-.reset:active { transform: scale(0.9); filter: brightness(1.2); }
-.reset:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.counters.count-1 .tile-reset { right: 0.7em; bottom: 0.7em; width: 2em; height: 2em; }
+.tile-reset svg { width: 1.1em; height: 1.1em; }
+.tile-reset:hover { color: var(--text); }
+.tile-reset:active { transform: scale(0.9); filter: brightness(1.2); }
+.tile-reset:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
 
 .confirm {
   position: absolute;
@@ -149,7 +184,10 @@ html, body {
 /* ---------- Small tiles: shrink the chrome ---------- */
 
 @container (max-height: 240px) or (max-width: 220px) {
-  .label { font-size: 0.95em; }
-  .count-value { font-size: 2.2em; }
-  .reset { width: 1.7em; height: 1.7em; right: 0.5em; bottom: 0.5em; }
+  .tile-label { font-size: 0.95em; }
+  .tile-value { font-size: 2.2em; }
+  .counters.count-2 .tile-value { font-size: 1.5em; }
+  .counters.count-3 .tile-value,
+  .counters.count-4 .tile-value { font-size: 1.1em; }
+  .tile-reset { width: 1.5em; height: 1.5em; right: 0.4em; bottom: 0.4em; }
 }
