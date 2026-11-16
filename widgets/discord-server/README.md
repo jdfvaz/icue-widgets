@@ -13,8 +13,10 @@ You need the Manage Server permission on the server.
 1. In Discord, open **Server Settings > Engagement** and scroll to **Server Widget**.
 2. Turn on **Enable Server Widget**, then click **Save Changes** in the bar at the bottom.
 3. Copy the **Server ID** shown in that section.
-4. Optional: pick an **Invite Channel** in the same section. This lets the widget show the server
-   icon and the total member count.
+4. **To show the server logo**, also pick an **Invite Channel** in the same section (then **Save Changes** again).
+   Discord's public widget feed only exposes the server icon through an invite lookup, so without an
+   Invite Channel selected the widget always falls back to showing the server's initials instead of the
+   logo — it'll show a notice in the widget telling you this until one is set.
 
 Note: turning this on makes the same information (server name, voice
 channels everyone can join, online members) readable by anyone who knows the
@@ -40,7 +42,7 @@ icuewidget package widgets/discord-server/DiscordServer -o dist/discord-server.i
 | Setting | What it does |
 |---|---|
 | Server ID | Paste the ID (or the whole widget URL, the ID is picked out of it). Empty shows sample data. |
-| Refresh every | How often to ask Discord for new data (30 to 600 s). Discord itself updates the feed about once a minute. |
+| Refresh every | How often to ask Discord for new data (15 to 600 s). The widget also refreshes immediately when the tile becomes visible/focused again (if its last check was more than 10 s ago), so switching back to it catches up right away instead of waiting out the full interval. |
 | Tapping opens | Discord app (`discord://` link) or the browser. |
 | Show online members | The right-hand list of online people who are not in voice. |
 | Show what people are playing | Game or app name under each person. |

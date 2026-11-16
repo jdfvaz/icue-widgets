@@ -13,7 +13,7 @@
 
 var DSW_DEFAULTS = {
   serverId: "",
-  refreshSeconds: 60,
+  refreshSeconds: 30,
   openIn: "app",
   showMembers: true,
   showActivity: true,
@@ -187,9 +187,19 @@ var DiscordWidget = (function () {
   function schedule(minDelayMs) {
     clearTimeout(st.timer);
     if (!st.guildId) return;
-    var base = Math.max(30, settings.refreshSeconds) * 1000;
-    if (st.error && !st.data) base = 30000; // setup problem: check again sooner
+    var base = Math.max(15, settings.refreshSeconds) * 1000;
+    if (st.error && !st.data) base = 15000; // setup problem: check again sooner
     st.timer = setTimeout(refresh, Math.max(minDelayMs || 0, base));
+  }
+
+  // Lets an inactive/backgrounded widget catch up instantly instead of
+  // waiting out the rest of its poll interval once it's visible/focused
+  // again (e.g. you joined voice while the tile wasn't on screen).
+  var MIN_REFRESH_GAP_MS = 10000;
+  function refreshIfStale() {
+    if (!st.guildId) return;
+    if (Date.now() - (st.checkedAt || 0) < MIN_REFRESH_GAP_MS) return;
+    refresh();
   }
 
   function classify(r) {
@@ -411,6 +421,11 @@ var DiscordWidget = (function () {
       n.className = "notice";
       n.appendChild(el("span", null, "Couldn't refresh. Showing what Discord reported " + ago(st.lastOk) + "."));
       n.hidden = false;
+    } else if (st.data && !st.data.instant_invite) {
+      n.className = "notice is-demo";
+      n.appendChild(el("span", null,
+        "No server logo: pick an Invite Channel in Server Settings > Engagement > Server Widget to show it."));
+      n.hidden = false;
     } else {
       n.hidden = true;
     }
@@ -554,20 +569,32 @@ var DiscordWidget = (function () {
       refresh();
     });
     if (typeof ResizeObserver !== "undefined") {
-      new ResizeObserver(function () { requestAnimationFrame(fitAll); }).observe($("root"));
+      new ResizeObserver(function () {
+        requestAnimationFrame(fitAll);
+        refreshIfStale(); // tile just became visible/resized: catch up now
+      }).observe($("root"));
+    }
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "visible") refreshIfStale();
+      });
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", refreshIfStale);
+      window.addEventListener("pageshow", refreshIfStale);
     }
     setInterval(updateNotice, 30000);
   }
 
   init();
-  return { apply: apply };
+  return { apply: apply, refreshNow: refreshIfStale };
 })();
 
 // ---------- iCUE lifecycle ----------
 
 icueEvents = {
   onICUEInitialized: function (payload) { DiscordWidget.apply(payload && payload.settings); },
-  onDataUpdated: function (payload) { DiscordWidget.apply(payload && payload.settings); }
+  onDataUpdated: function (payload) { DiscordWidget.apply(payload && payload.settings); DiscordWidget.refreshNow(); }
 };
 
 if (typeof iCUE_initialized === "undefined") {
